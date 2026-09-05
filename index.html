@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manutenção de Iluminação Pública</title>
+    <!-- Biblioteca SheetJS para exportação de Excel nativo -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --primary-hover: #004085;
+            --success: #28a745;
+            --success-hover: #218838;
+            --danger: #dc3545;
+            --danger-hover: #c82333;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --pink: #e83e8c;
+            --pink-hover: #d63384;
+            --bg: #f4f6f9;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --disabled: #e9ecef;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 15px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .home-menu { display: flex; flex-direction: column; gap: 20px; margin-top: 40px; }
+        .btn-home { background-color: var(--primary); color: white; border: none; padding: 20px; font-size: 1.1rem; font-weight: bold; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); cursor: pointer; transition: transform 0.2s ease; }
+        .btn-home:hover { background-color: var(--primary-hover); transform: translateY(-3px); }
+        .page { display: none; background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .active { display: block !important; }
+        h2 { margin-bottom: 20px; color: var(--primary); font-size: 1.3rem; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+        .form-group { margin-bottom: 15px; }
+        .form-row { display: flex; gap: 10px; }
+        .form-row .form-group { flex: 1; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; }
+        textarea { resize: none; min-height: 80px; overflow-y: hidden; }
+        input:disabled, select:disabled, textarea:disabled { background-color: var(--disabled); cursor: not-allowed; opacity: 0.8; color: #555; }
+        fieldset { border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        legend { font-weight: bold; padding: 0 5px; color: var(--primary); }
+        .btn-gps { background-color: #17a2b8; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+        .btn-back { background-color: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; margin-bottom: 15px; }
+        .form-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 25px; }
+        .btn-action { width: 100%; padding: 16px; font-size: 1.1rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; color: white; }
+        .btn-salvar { background-color: var(--success); }
+        .btn-duplicar { background-color: var(--pink); }
+        .btn-duplicar:hover { background-color: var(--pink-hover); }
+        .btn-cancelar { background-color: var(--danger); }
+        
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 15px; }
+        .btn-tab { flex: 1; padding: 10px; border: 1px solid var(--primary); background: white; color: var(--primary); font-weight: bold; border-radius: 6px; cursor: pointer; }
+        .btn-tab.active-tab { background: var(--primary); color: white; }
+        .export-actions { display: flex; gap: 10px; margin-bottom: 15px; }
+        .btn-export { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-excel { background-color: #1d6f42; }
+        .btn-msg { background-color: #25d366; color: #111; }
+        
+        .item-card { background: #f8f9fa; border: 1px solid #e0e0e0; border-left: 5px solid var(--primary); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+        .card-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; color: var(--primary); }
+        .card-body { font-size: 0.9rem; line-height: 1.4; color: #555; }
+        
+        .card-actions-top { margin-top: 12px; margin-bottom: 8px; }
+        .card-actions-bottom { display: flex; justify-content: flex-end; gap: 8px; }
+        
+        .btn-view { width: 100%; padding: 10px; font-size: 0.95rem; background-color: var(--info); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-edit { background-color: var(--warning); color: #000; }
+        .btn-del { background-color: var(--danger); }
+
+        .filter-section {
+            background-color: #e9ecef;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .view-banner {
+            display: none;
+            background-color: #e2e3e5;
+            color: #383d41;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border: 1px solid #d6d8db;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HOME -->
+    <div id="page-home" class="page active">
+        <h2 style="text-align: center; border: none;">Gestão de Iluminação Pública</h2>
+        <div class="home-menu">
+            <button class="btn-home" onclick="navTo('page-manutencao')">Manutenção Executada</button>
+            <button class="btn-home" onclick="navTo('page-demandas')">Demandas Novas</button>
+            <button class="btn-home" onclick="navTo('page-consulta')">Consulta / Exportação</button>
+        </div>
+    </div>
+
+    <!-- MANUTENÇÃO EXECUTADA -->
+    <div id="page-manutencao" class="page">
+        <button class="btn-back" onclick="voltarParaAbaOrigem('page-manutencao')">← Voltar</button>
+        <div id="banner-view-manutencao" class="view-banner">🔍 Modo Apenas Leitura (Visualização)</div>
+        <h2 id="titulo-manutencao">Manutenção Executada</h2>
+
+        <form id="form-manutencao">
+            <input type="hidden" id="registro-id">
+
+            <div class="form-group">
+                <label for="morador-ref-manutencao">Morador de Referência:</label>
+                <input type="text" id="morador-ref-manutencao" placeholder="Nome do morador de referência">
+            </div>
+
+            <div class="form-group">
+                <label for="data">Data da Manutenção:</label>
+                <input type="date" id="data" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="barramento">Barramento:</label>
+                    <input type="text" id="barramento" placeholder="Ex: S/N ou 333947">
+                </div>
+                <div class="form-group">
+                    <label for="trafo">Trafo:</label>
+                    <input type="text" id="trafo" placeholder="Ex: E270146">
+                </div>
+            </div>
+
+            <button type="button" id="btn-gps-manutencao" class="btn-gps" onclick="obterGPS('latitude', 'longitude')">Obter Localização GPS</button>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="latitude">Latitude:</label>
+                    <input type="text" id="latitude" placeholder="Aguardando GPS...">
+                </div>
+                <div class="form-group">
+                    <label for="longitude">Longitude:</label>
+                    <input type="text" id="longitude" placeholder="Aguardando GPS...">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="endereco">Endereço:</label>
+                <input type="text" id="endereco" placeholder="Rua / Povoado / Lagoa">
+            </div>
+
+            <div class="form-group">
+                <label for="bairro">Bairro / Zona:</label>
+                <input type="text" id="bairro" placeholder="Ex: Zona Rural / Centro">
+            </div>
+
+            <div class="form-group">
+                <label for="acao">Ação Solicitada:</label>
+                <select id="acao" onchange="validarAcaoSolicitada()">
+                    <option value="Alteracao" selected>Alteração</option>
+                    <option value="Inclusao">Inclusão</option>
+                    <option value="Exclusao">Exclusão</option>
+                </select>
+            </div>
+
+            <fieldset id="fs-antes">
+                <legend>Situação Antes da Alteração</legend>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="qtd-antes">Qtd:</label>
+                        <input type="number" id="qtd-antes" class="input-antes">
+                    </div>
+                    <div class="form-group">
+                        <label for="potencia-antes">Potência (W):</label>
+                        <input type="number" id="potencia-antes" class="input-antes">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tipo-antes">Tipo:</label>
+                        <select id="tipo-antes" class="input-antes">
+                            <option value="FL">FL</option>
+                            <option value="HL">HL</option>
+                            <option value="IN">IN</option>
+                            <option value="LED" selected>LED</option>
+                            <option value="MS">MS</option>
+                            <option value="MM">MM</option>
+                            <option value="VS">VS</option>
+                            <option value="VP">VP</option>
+                            <option value="ME">ME</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="horas-antes">Horas Diárias:</label>
+                        <input type="number" id="horas-antes" class="input-antes" value="12">
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset id="fs-atualizacao">
+                <legend>Solicitação de Atualização</legend>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="qtd-depois">Qtd:</label>
+                        <input type="number" id="qtd-depois" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="potencia-depois">Potência (W):</label>
+                        <input type="number" id="potencia-depois" value="50">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tipo-depois">Tipo:</label>
+                        <select id="tipo-depois">
+                            <option value="FL">FL</option>
+                            <option value="HL">HL</option>
+                            <option value="IN">IN</option>
+                            <option value="LED" selected>LED</option>
+                            <option value="MS">MS</option>
+                            <option value="MM">MM</option>
+                            <option value="VS">VS</option>
+                            <option value="VP">VP</option>
+                            <option value="ME">ME</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="horas-depois">Horas Diárias:</label>
+                        <input type="number" id="horas-depois" value="12">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Ações Modo Edição -->
+            <div class="form-actions" id="manutencao-actions">
+                <button type="button" class="btn-action btn-salvar" onclick="salvarManutencao()">Salvar</button>
+                <button type="button" class="btn-action btn-cancelar" onclick="cancelarManutencao()">Cancelar</button>
+            </div>
+
+            <!-- Ações Modo Apenas Leitura (Pós-Salvar ou Consulta) -->
+            <div class="form-actions" id="manutencao-view-actions" style="display: none;">
+                <button type="button" class="btn-action btn-msg" onclick="gerarMensagemAtualManutencao()">💬 Enviar Mensagem WhatsApp</button>
+                <button type="button" class="btn-action btn-duplicar" onclick="duplicarRegistroAtual()">Duplicar</button>
+                <button type="button" class="btn-action btn-back" style="margin-bottom:0;" onclick="voltarParaAbaOrigem('page-manutencao')">Voltar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- DEMANDAS NOVAS -->
+    <div id="page-demandas" class="page">
+        <button class="btn-back" onclick="voltarParaAbaOrigem('page-demandas')">← Voltar</button>
+        <div id="banner-view-demandas" class="view-banner">🔍 Modo Apenas Leitura (Visualização)</div>
+        <h2 id="titulo-demandas">Demandas Novas</h2>
+
+        <form id="form-demandas" onsubmit="salvarDemandaNova(event)">
+            <input type="hidden" id="demanda-id">
+
+            <div class="form-group">
+                <label for="solicitante">Solicitante:</label>
+                <input type="text" id="solicitante" placeholder="Nome do solicitante">
+            </div>
+
+            <div class="form-group">
+                <label for="morador-ref">Morador de Referência:</label>
+                <input type="text" id="morador-ref" placeholder="Nome do morador de referência">
+            </div>
+
+            <div class="form-group">
+                <label for="endereco-demanda">Endereço:</label>
+                <textarea id="endereco-demanda" placeholder="Anotações e detalhes do endereço..." oninput="autoResize(this)"></textarea>
+            </div>
+
+            <button type="button" id="btn-gps-demandas" class="btn-gps" onclick="obterGPS('lat-demanda', 'long-demanda')">Obter Localização GPS</button>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="lat-demanda">Latitude:</label>
+                    <input type="text" id="lat-demanda" placeholder="Sem GPS (Opcional)">
+                </div>
+                <div class="form-group">
+                    <label for="long-demanda">Longitude:</label>
+                    <input type="text" id="long-demanda" placeholder="Sem GPS (Opcional)">
+                </div>
+            </div>
+
+            <div class="form-actions" id="demandas-actions">
+                <button type="submit" class="btn-action btn-salvar">Salvar</button>
+                <button type="button" class="btn-action btn-cancelar" onclick="cancelarDemanda()">Cancelar</button>
+            </div>
+            <div class="form-actions" id="demandas-view-actions" style="display: none;">
+                <button type="button" class="btn-action btn-back" style="margin-bottom:0;" onclick="navTo('page-consulta')">Voltar para Consulta</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- CONSULTA -->
+    <div id="page-consulta" class="page">
+        <button class="btn-back" onclick="navTo('page-home')">← Voltar</button>
+        <h2>Consulta e Exportação</h2>
+
+        <div class="tab-menu">
+            <button id="tab-manutencao" class="btn-tab active-tab" onclick="alternarAba('manutencao')">Manutenções</button>
+            <button id="tab-demandas" class="btn-tab" onclick="alternarAba('demandas')">Demandas Novas</button>
+        </div>
+
+        <div class="export-actions">
+            <button class="btn-export btn-excel" onclick="exportarExcelPlanilhaOriginal()">📊 Baixar Excel Planilha</button>
+            <button class="btn-export btn-msg" onclick="gerarMensagemWhatsApp()">💬 Gerar Mensagem</button>
+        </div>
+
+        <!-- SEÇÃO DE FILTRO POR PERÍODO DE DATAS -->
+        <div class="filter-section">
+            <div class="form-row">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="data-inicio">Data Inicial:</label>
+                    <input type="date" id="data-inicio" onchange="carregarConsulta()">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="data-fim">Data Final:</label>
+                    <input type="date" id="data-fim" onchange="carregarConsulta()">
+                </div>
+            </div>
+        </div>
+
+        <!-- CAMPO DE BUSCA TEXTUAL -->
+        <div class="form-group">
+            <input type="text" id="busca-consulta" placeholder="🔍 Pesquisar nos registros exibidos..." oninput="carregarConsulta()">
+        </div>
+
+        <div id="lista-registros"></div>
+    </div>
+
+</div>
+
+<script>
+    var abaAtual = 'manutencao';
+    var vemLendoDeConsulta = false;
+
+    function obterDataHojeLocal() {
+        var agora = new Date();
+        var ano = agora.getFullYear();
+        var mes = String(agora.getMonth() + 1).padStart(2, '0');
+        var dia = String(agora.getDate()).padStart(2, '0');
+        return ano + '-' + mes + '-' + dia;
+    }
+
+    function navTo(pageId) {
+        var pages = document.querySelectorAll('.page');
+        pages.forEach(function(p) { p.classList.remove('active'); });
+        
+        var targetPage = document.getElementById(pageId);
+        if (targetPage) {
+            targetPage.classList.add('active');
+        }
+
+        if (pageId === 'page-manutencao') {
+            var regId = document.getElementById('registro-id');
+            if (regId && !regId.value) {
+                desbloquearFormulario('form-manutencao');
+                resetarData();
+                obterGPS('latitude', 'longitude');
+            }
+        } else if (pageId === 'page-demandas') {
+            var demId = document.getElementById('demanda-id');
+            if (demId && !demId.value) {
+                desbloquearFormulario('form-demandas');
+            }
+        } else if (pageId === 'page-consulta') {
+            vemLendoDeConsulta = false;
+            configurarDatasPadraoConsulta();
+            carregarConsulta();
+        }
+    }
+
+    function voltarParaAbaOrigem(paginaOrigem) {
+        if (vemLendoDeConsulta) {
+            navTo('page-consulta');
+        } else {
+            navTo('page-home');
+        }
+    }
+
+    function resetarData() {
+        var campoData = document.getElementById('data');
+        if (campoData) {
+            campoData.value = obterDataHojeLocal();
+        }
+    }
+
+    function configurarDatasPadraoConsulta() {
+        var dataInicioEl = document.getElementById('data-inicio');
+        var dataFimEl = document.getElementById('data-fim');
+
+        if (dataInicioEl && dataFimEl) {
+            var hoje = obterDataHojeLocal();
+            var partes = hoje.split('-');
+            var dataInicioMes = partes[0] + '-' + partes[1] + '-01';
+
+            if (!dataInicioEl.value) {
+                dataInicioEl.value = dataInicioMes;
+            }
+            if (!dataFimEl.value) {
+                dataFimEl.value = hoje;
+            }
+        }
+    }
+
+    function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = (textarea.scrollHeight) + 'px';
+    }
+
+    function obterGPS(idLat, idLong) {
+        var latInput = document.getElementById(idLat);
+        var longInput = document.getElementById(idLong);
+        if (!latInput || !longInput) return;
+
+        latInput.placeholder = "Obtendo GPS...";
+        longInput.placeholder = "Obtendo GPS...";
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    latInput.value = position.coords.latitude.toFixed(6);
+                    longInput.value = position.coords.longitude.toFixed(6);
+                },
+                function(error) {
+                    latInput.placeholder = "Sem sinal GPS";
+                    longInput.placeholder = "Sem sinal GPS";
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+    }
+
+    function validarAcaoSolicitada() {
+        var acaoEl = document.getElementById('acao');
+        if (!acaoEl) return;
+
+        var acao = acaoEl.value;
+        var camposAntes = document.querySelectorAll('.input-antes');
+        var ehAlteracao = (acao === 'Alteracao');
+
+        camposAntes.forEach(function(campo) {
+            campo.disabled = !ehAlteracao;
+            if (!ehAlteracao && campo.tagName === 'INPUT') campo.value = '';
+        });
+    }
+
+    function salvarManutencao() {
+        var registroId = document.getElementById('registro-id').value || Date.now().toString();
+
+        var dadosFormulario = {
+            id: registroId,
+            moradorRef: document.getElementById('morador-ref-manutencao').value,
+            data: document.getElementById('data').value,
+            barramento: document.getElementById('barramento').value || 'S/N',
+            trafo: document.getElementById('trafo').value || 'S/N',
+            latitude: document.getElementById('latitude').value,
+            longitude: document.getElementById('longitude').value,
+            endereco: document.getElementById('endereco').value,
+            bairro: document.getElementById('bairro').value,
+            acao: document.getElementById('acao').value,
+            antes: {
+                qtd: document.getElementById('qtd-antes').value,
+                potencia: document.getElementById('potencia-antes').value,
+                tipo: document.getElementById('tipo-antes').value,
+                horas: document.getElementById('horas-antes').value
+            },
+            depois: {
+                qtd: document.getElementById('qtd-depois').value,
+                potencia: document.getElementById('potencia-depois').value,
+                tipo: document.getElementById('tipo-depois').value,
+                horas: document.getElementById('horas-depois').value
+            }
+        };
+
+        var manutencoesSalvas = JSON.parse(localStorage.getItem('manutencoes_ip')) || [];
+        var indexExistente = manutencoesSalvas.findIndex(function(item) { return item.id === registroId; });
+
+        if (indexExistente !== -1) {
+            manutencoesSalvas[indexExistente] = dadosFormulario;
+        } else {
+            manutencoesSalvas.push(dadosFormulario);
+        }
+
+        localStorage.setItem('manutencoes_ip', JSON.stringify(manutencoesSalvas));
+
+        alert("Manutenção registrada com sucesso!");
+        bloquearFormulario('form-manutencao');
+    }
+
+    function duplicarRegistroAtual() {
+        document.getElementById('registro-id').value = ''; // Limpa o ID antigo para que seja gerado um novo ao salvar
+        desbloquearFormulario('form-manutencao');
+        obterGPS('latitude', 'longitude'); // Atualiza a coordenada GPS para a nova localização
+        alert("Preenchimento mantido! Faça as alterações necessárias no novo cadastro e clique em Salvar.");
+    }
+
+    function salvarDemandaNova(event) {
+        event.preventDefault();
+        var demandaId = document.getElementById('demanda-id').value || Date.now().toString();
+
+        var dadosDemanda = {
+            id: demandaId,
+            dataRegistro: obterDataHojeLocal(),
+            solicitante: document.getElementById('solicitante').value,
+            moradorRef: document.getElementById('morador-ref').value,
+            endereco: document.getElementById('endereco-demanda').value,
+            latitude: document.getElementById('lat-demanda').value,
+            longitude: document.getElementById('long-demanda').value
+        };
+
+        var demandasSalvas = JSON.parse(localStorage.getItem('demandas_ip')) || [];
+        var indexExistente = demandasSalvas.findIndex(function(item) { return item.id === demandaId; });
+
+        if (indexExistente !== -1) {
+            demandasSalvas[indexExistente] = dadosDemanda;
+        } else {
+            demandasSalvas.push(dadosDemanda);
+        }
+
+        localStorage.setItem('demandas_ip', JSON.stringify(demandasSalvas));
+        alert("Demanda salva!");
+        limparFormularioDemanda();
+        voltarParaAbaOrigem('page-demandas');
+    }
+
+    function limparFormularioManutencao() {
+        document.getElementById('form-manutencao').reset();
+        document.getElementById('registro-id').value = '';
+        resetarData();
+        validarAcaoSolicitada();
+    }
+
+    function limparFormularioDemanda() {
+        document.getElementById('form-demandas').reset();
+        document.getElementById('demanda-id').value = '';
+    }
+
+    function cancelarManutencao() {
+        if (confirm("Cancelar manutenção?")) { 
+            limparFormularioManutencao(); 
+            voltarParaAbaOrigem('page-manutencao'); 
+        }
+    }
+
+    function cancelarDemanda() {
+        if (confirm("Cancelar demanda?")) { 
+            limparFormularioDemanda(); 
+            voltarParaAbaOrigem('page-demandas'); 
+        }
+    }
+
+    function alternarAba(aba) {
+        abaAtual = aba;
+        document.getElementById('tab-manutencao').classList.toggle('active-tab', aba === 'manutencao');
+        document.getElementById('tab-demandas').classList.toggle('active-tab', aba === 'demandas');
+        carregarConsulta();
+    }
+
+    function carregarConsulta() {
+        var container = document.getElementById('lista-registros');
+        if (!container) return;
+        var filtroTexto = (document.getElementById('busca-consulta').value || '').toLowerCase();
+        var dtInicio = document.getElementById('data-inicio').value;
+        var dtFim = document.getElementById('data-fim').value;
+
+        container.innerHTML = '';
+
+        if (abaAtual === 'manutencao') {
+            var lista = JSON.parse(localStorage.getItem('manutencoes_ip')) || [];
+            
+            var porData = lista.filter(function(item) {
+                if (!item.data) return false;
+                if (dtInicio && item.data < dtInicio) return false;
+                if (dtFim && item.data > dtFim) return false;
+                return true;
+            });
+
+            var filtrados = porData.filter(function(item) {
+                return (item.moradorRef && item.moradorRef.toLowerCase().indexOf(filtroTexto) !== -1) ||
+                       (item.endereco && item.endereco.toLowerCase().indexOf(filtroTexto) !== -1) ||
+                       (item.bairro && item.bairro.toLowerCase().indexOf(filtroTexto) !== -1) ||
+                       (item.trafo && item.trafo.toLowerCase().indexOf(filtroTexto) !== -1);
+            });
+
+            if (filtrados.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888;">Nenhuma manutenção encontrada para este período.</p>';
+                return;
+            }
+
+            filtrados.forEach(function(item, idx) {
+                var card = document.createElement('div');
+                card.className = 'item-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span>Item ${(idx+1).toString().padStart(2, '0')} - Ref: ${item.moradorRef || 'N/A'}</span>
+                        <span>Data: ${formatarDataBR(item.data)}</span>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Local:</strong> ${item.endereco || '-'}, ${item.bairro || '-'}</p>
+                        <p><strong>Ação:</strong> ${item.acao} | <strong>Trafo:</strong> ${item.trafo}</p>
+                    </div>
+                    <div class="card-actions-top">
+                        <button class="btn-view" onclick="visualizarManutencao('${item.id}')">👁️ Visualizar</button>
+                    </div>
+                    <div class="card-actions-bottom">
+                        <button class="btn-sm btn-edit" onclick="editarManutencao('${item.id}')">Editar</button>
+                        <button class="btn-sm btn-del" onclick="excluirRegistro('manutencoes_ip', '${item.id}')">Excluir</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        } else {
+            var lista = JSON.parse(localStorage.getItem('demandas_ip')) || [];
+            
+            var porData = lista.filter(function(item) {
+                if (!item.dataRegistro) return false;
+                if (dtInicio && item.dataRegistro < dtInicio) return false;
+                if (dtFim && item.dataRegistro > dtFim) return false;
+                return true;
+            });
+
+            var filtrados = porData.filter(function(item) {
+                return (item.solicitante && item.solicitante.toLowerCase().indexOf(filtroTexto) !== -1) ||
+                       (item.moradorRef && item.moradorRef.toLowerCase().indexOf(filtroTexto) !== -1) ||
+                       (item.endereco && item.endereco.toLowerCase().indexOf(filtroTexto) !== -1);
+            });
+
+            if (filtrados.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888;">Nenhuma demanda encontrada para este período.</p>';
+                return;
+            }
+
+            filtrados.forEach(function(item) {
+                var card = document.createElement('div');
+                card.className = 'item-card';
+                card.style.borderLeftColor = '#ffc107';
+                card.innerHTML = `
+                    <div class="card-header" style="color: #d39e00;">
+                        <span>Solicitante: ${item.solicitante || 'N/A'}</span>
+                        <span>Data: ${formatarDataBR(item.dataRegistro)}</span>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Morador Ref:</strong> ${item.moradorRef || '-'}</p>
+                        <p><strong>Endereço:</strong> ${item.endereco || '-'}</p>
+                    </div>
+                    <div class="card-actions-top">
+                        <button class="btn-view" onclick="visualizarDemanda('${item.id}')">👁️ Visualizar</button>
+                    </div>
+                    <div class="card-actions-bottom">
+                        <button class="btn-sm btn-edit" onclick="editarDemanda('${item.id}')">Editar</button>
+                        <button class="btn-sm btn-del" onclick="excluirRegistro('demandas_ip', '${item.id}')">Excluir</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    }
+
+    function formatarDataBR(dataIso) {
+        if (!dataIso) return '-';
+        var p = dataIso.split('-');
+        return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : dataIso;
+    }
+
+    /* ---- BLOQUEIO / DESBLOQUEIO DE FORMULÁRIOS ---- */
+    function bloquearFormulario(formId) {
+        var form = document.getElementById(formId);
+        if (!form) return;
+        var elementos = form.querySelectorAll('input, select, textarea');
+        elementos.forEach(function(el) { el.disabled = true; });
+
+        if (formId === 'form-manutencao') {
+            document.getElementById('banner-view-manutencao').style.display = 'block';
+            document.getElementById('btn-gps-manutencao').style.display = 'none';
+            document.getElementById('manutencao-actions').style.display = 'none';
+            document.getElementById('manutencao-view-actions').style.display = 'flex';
+        } else if (formId === 'form-demandas') {
+            document.getElementById('banner-view-demandas').style.display = 'block';
+            document.getElementById('btn-gps-demandas').style.display = 'none';
+            document.getElementById('demandas-actions').style.display = 'none';
+            document.getElementById('demandas-view-actions').style.display = 'flex';
+        }
+    }
+
+    function desbloquearFormulario(formId) {
+        var form = document.getElementById(formId);
+        if (!form) return;
+        var elementos = form.querySelectorAll('input, select, textarea');
+        elementos.forEach(function(el) { el.disabled = false; });
+
+        if (formId === 'form-manutencao') {
+            document.getElementById('banner-view-manutencao').style.display = 'none';
+            document.getElementById('btn-gps-manutencao').style.display = 'block';
+            document.getElementById('manutencao-actions').style.display = 'flex';
+            document.getElementById('manutencao-view-actions').style.display = 'none';
+            validarAcaoSolicitada();
+        } else if (formId === 'form-demandas') {
+            document.getElementById('banner-view-demandas').style.display = 'none';
+            document.getElementById('btn-gps-demandas').style.display = 'block';
+            document.getElementById('demandas-actions').style.display = 'flex';
+            document.getElementById('demandas-view-actions').style.display = 'none';
+        }
+    }
+
+    /* ---- GERAR MENSAGEM DO ITEM ATUAL EXIBIDO NO FORMULÁRIO ---- */
+    function gerarMensagemAtualManutencao() {
+        var moradorRef = document.getElementById('morador-ref-manutencao').value;
+        var dataVal = document.getElementById('data').value;
+        var enderecoVal = document.getElementById('endereco').value;
+        var bairroVal = document.getElementById('bairro').value;
+        var trafoVal = document.getElementById('trafo').value;
+        var barramentoVal = document.getElementById('barramento').value;
+        var latVal = document.getElementById('latitude').value;
+        var longVal = document.getElementById('longitude').value;
+        var acaoVal = document.getElementById('acao').value;
+
+        var qtdAntes = document.getElementById('qtd-antes').value;
+        var potAntes = document.getElementById('potencia-antes').value;
+        var tipoAntes = document.getElementById('tipo-antes').value;
+
+        var qtdDepois = document.getElementById('qtd-depois').value;
+        var potDepois = document.getElementById('potencia-depois').value;
+        var tipoDepois = document.getElementById('tipo-depois').value;
+
+        var txt = "*MANUTENÇÃO DE ILUMINAÇÃO PÚBLICA*\n\n";
+        txt += "👤 *Morador Ref:* " + (moradorRef || 'N/A') + "\n";
+        txt += "📅 *Data da Manutenção:* " + formatarDataBR(dataVal) + "\n";
+        txt += "📍 *Endereço:* " + (enderecoVal || '-') + ", " + (bairroVal || '-') + "\n";
+        txt += "⚡ *Trafo:* " + (trafoVal || 'S/N') + " | *Barramento:* " + (barramentoVal || 'S/N') + "\n";
+        txt += "🌐 *GPS:* " + (latVal || '-') + ", " + (longVal || '-') + "\n";
+        txt += "🛠️ *Ação:* " + acaoVal + "\n";
+
+        if (acaoVal === 'Alteracao' && qtdAntes) {
+            txt += "🔍 *Situação Antes:* " + qtdAntes + "x " + potAntes + "W " + tipoAntes + "\n";
+        }
+
+        if (qtdDepois) {
+            txt += "💡 *Instalado:* " + qtdDepois + "x " + potDepois + "W " + tipoDepois + "\n";
+        }
+
+        navigator.clipboard.writeText(txt);
+        alert("Texto da manutenção atual copiado para a área de transferência! Cole no WhatsApp.");
+    }
+
+    /* ---- AÇÕES DE VISUALIZAÇÃO ---- */
+    function visualizarManutencao(id) {
+        vemLendoDeConsulta = true;
+        preencherCamposManutencao(id);
+        bloquearFormulario('form-manutencao');
+        navTo('page-manutencao');
+    }
+
+    function visualizarDemanda(id) {
+        vemLendoDeConsulta = true;
+        preencherCamposDemanda(id);
+        bloquearFormulario('form-demandas');
+        navTo('page-demandas');
+    }
+
+    /* ---- AÇÕES DE EDIÇÃO ---- */
+    function preencherCamposManutencao(id) {
+        var lista = JSON.parse(localStorage.getItem('manutencoes_ip')) || [];
+        var item = lista.find(function(m) { return m.id === id; });
+        if (!item) return;
+
+        document.getElementById('registro-id').value = item.id;
+        document.getElementById('morador-ref-manutencao').value = item.moradorRef || '';
+        document.getElementById('data').value = item.data || '';
+        document.getElementById('barramento').value = item.barramento || '';
+        document.getElementById('trafo').value = item.trafo || '';
+        document.getElementById('latitude').value = item.latitude || '';
+        document.getElementById('longitude').value = item.longitude || '';
+        document.getElementById('endereco').value = item.endereco || '';
+        document.getElementById('bairro').value = item.bairro || '';
+        document.getElementById('acao').value = item.acao || 'Alteracao';
+
+        if (item.antes) {
+            document.getElementById('qtd-antes').value = item.antes.qtd || '';
+            document.getElementById('potencia-antes').value = item.antes.potencia || '';
+            document.getElementById('tipo-antes').value = item.antes.tipo || 'LED';
+            document.getElementById('horas-antes').value = item.antes.horas || '';
+        }
+
+        if (item.depois) {
+            document.getElementById('qtd-depois').value = item.depois.qtd || '';
+            document.getElementById('potencia-depois').value = item.depois.potencia || '';
+            document.getElementById('tipo-depois').value = item.depois.tipo || 'LED';
+            document.getElementById('horas-depois').value = item.depois.horas || '';
+        }
+    }
+
+    function preencherCamposDemanda(id) {
+        var lista = JSON.parse(localStorage.getItem('demandas_ip')) || [];
+        var item = lista.find(function(d) { return d.id === id; });
+        if (!item) return;
+
+        document.getElementById('demanda-id').value = item.id;
+        document.getElementById('solicitante').value = item.solicitante || '';
+        document.getElementById('morador-ref').value = item.moradorRef || '';
+        document.getElementById('endereco-demanda').value = item.endereco || '';
+        document.getElementById('lat-demanda').value = item.latitude || '';
+        document.getElementById('long-demanda').value = item.longitude || '';
+    }
+
+    function editarManutencao(id) {
+        vemLendoDeConsulta = true;
+        desbloquearFormulario('form-manutencao');
+        preencherCamposManutencao(id);
+        validarAcaoSolicitada();
+        navTo('page-manutencao');
+    }
+
+    function editarDemanda(id) {
+        vemLendoDeConsulta = true;
+        desbloquearFormulario('form-demandas');
+        preencherCamposDemanda(id);
+        navTo('page-demandas');
+    }
+
+    function excluirRegistro(chaveStorage, id) {
+        if (confirm("Deseja excluir este registro?")) {
+            var lista = JSON.parse(localStorage.getItem(chaveStorage)) || [];
+            lista = lista.filter(function(item) { return item.id !== id; });
+            localStorage.setItem(chaveStorage, JSON.stringify(lista));
+            carregarConsulta();
+        }
+    }
+
+    function exportarExcelPlanilhaOriginal() {
+        if (typeof XLSX === 'undefined') {
+            alert("A biblioteca de Excel não pôde ser carregada. Verifique sua conexão com a internet.");
+            return;
+        }
+
+        var dtInicio = document.getElementById('data-inicio').value;
+        var dtFim = document.getElementById('data-fim').value;
+        var lista = JSON.parse(localStorage.getItem('manutencoes_ip')) || [];
+        
+        var filtrados = lista.filter(function(item) {
+            if (!item.data) return false;
+            if (dtInicio && item.data < dtInicio) return false;
+            if (dtFim && item.data > dtFim) return false;
+            return true;
+        });
+
+        if (filtrados.length === 0) {
+            alert("Nenhuma manutenção encontrada no período para exportar.");
+            return;
+        }
+
+        var dadosExcel = [
+            [
+                "1. Informações de localização do barramento objeto da alteração", "", "", "", "", "", "", "", "",
+                "2. Ação solicitada", "", "",
+                "3. Situação antes da alteração", "", "", "",
+                "4. Solicitação de atualização", "", "", ""
+            ],
+            [
+                "Item", "Data da Manutenção", "Barramento", "Trafo", "Latitude", "Longitude", "Endereço", "Bairro", "Morador de Referência",
+                "Alteração", "Inclusão", "Exclusão",
+                "Qtd", "Potência (W)", "Tipo", "Horas Diárias",
+                "Qtd", "Potência (W)", "Tipo", "Horas Diárias"
+            ]
+        ];
+
+        filtrados.forEach(function(item, index) {
+            var numItem = (index + 1).toString().padStart(2, '0');
+            var dataSubst = formatarDataBR(item.data);
+            
+            var isAlt = item.acao === 'Alteracao' ? 'x' : '';
+            var isInc = item.acao === 'Inclusao' ? 'x' : '';
+            var isExc = item.acao === 'Exclusao' ? 'x' : '';
+
+            dadosExcel.push([
+                numItem,
+                dataSubst,
+                item.barramento || 'S/N',
+                item.trafo || 'S/N',
+                item.latitude || '',
+                item.longitude || '',
+                item.endereco || '',
+                item.bairro || '',
+                item.moradorRef || '',
+                isAlt,
+                isInc,
+                isExc,
+                item.antes ? item.antes.qtd : '',
+                item.antes ? item.antes.potencia : '',
+                item.antes ? item.antes.tipo : '',
+                item.antes ? item.antes.horas : '',
+                item.depois ? item.depois.qtd : '',
+                item.depois ? item.depois.potencia : '',
+                item.depois ? item.depois.tipo : '',
+                item.depois ? item.depois.horas : ''
+            ]);
+        });
+
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.aoa_to_sheet(dadosExcel);
+
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+            { s: { r: 0, c: 9 }, e: { r: 0, c: 11 } },
+            { s: { r: 0, c: 12 }, e: { r: 0, c: 15 } },
+            { s: { r: 0, c: 16 }, e: { r: 0, c: 19 } }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Manutenções");
+        XLSX.writeFile(wb, "Manutencao_Iluminacao_Publica.xlsx");
+    }
+
+    function gerarMensagemWhatsApp() {
+        var dtInicio = document.getElementById('data-inicio').value;
+        var dtFim = document.getElementById('data-fim').value;
+
+        if (abaAtual === 'manutencao') {
+            var lista = JSON.parse(localStorage.getItem('manutencoes_ip')) || [];
+            var filtrados = lista.filter(function(item) {
+                if (!item.data) return false;
+                if (dtInicio && item.data < dtInicio) return false;
+                if (dtFim && item.data > dtFim) return false;
+                return true;
+            });
+
+            if (filtrados.length === 0) return alert("Nenhum registro encontrado no período.");
+
+            var txt = "*RELATÓRIO DE MANUTENÇÕES (" + formatarDataBR(dtInicio) + " a " + formatarDataBR(dtFim) + ")*\n\n";
+            filtrados.forEach(function(item, idx) {
+                txt += "*Item " + (idx + 1) + "*\n";
+                txt += "👤 *Morador Ref:* " + (item.moradorRef || 'N/A') + "\n";
+                txt += "📅 *Data da Manutenção:* " + formatarDataBR(item.data) + "\n";
+                txt += "📍 *Endereço:* " + (item.endereco || '-') + ", " + (item.bairro || '-') + "\n";
+                txt += "⚡ *Trafo:* " + item.trafo + " | *Barramento:* " + item.barramento + "\n";
+                txt += "🌐 *GPS:* " + (item.latitude || '-') + ", " + (item.longitude || '-') + "\n";
+                txt += "🛠️ *Ação:* " + item.acao + "\n";
+                
+                if (item.acao === 'Alteracao' && item.antes && item.antes.qtd) {
+                    txt += "🔍 *Situação Antes:* " + item.antes.qtd + "x " + item.antes.potencia + "W " + item.antes.tipo + "\n";
+                }
+                
+                if (item.depois && item.depois.qtd) {
+                    txt += "💡 *Instalado:* " + item.depois.qtd + "x " + item.depois.potencia + "W " + item.depois.tipo + "\n";
+                }
+                txt += "------------------------------\n";
+            });
+
+            navigator.clipboard.writeText(txt);
+            alert("Texto copiado para a área de transferência! Cole no WhatsApp.");
+        } else {
+            var lista = JSON.parse(localStorage.getItem('demandas_ip')) || [];
+            var filtrados = lista.filter(function(item) {
+                if (!item.dataRegistro) return false;
+                if (dtInicio && item.dataRegistro < dtInicio) return false;
+                if (dtFim && item.dataRegistro > dtFim) return false;
+                return true;
+            });
+
+            if (filtrados.length === 0) return alert("Nenhum registro encontrado no período.");
+
+            var txt = "*RELATÓRIO DE DEMANDAS NOVAS (" + formatarDataBR(dtInicio) + " a " + formatarDataBR(dtFim) + ")*\n\n";
+            filtrados.forEach(function(item, idx) {
+                txt += "*Demanda " + (idx + 1) + "*\n";
+                txt += "🗣️ *Solicitante:* " + (item.solicitante || 'N/A') + "\n";
+                txt += "👤 *Morador Ref:* " + (item.moradorRef || 'N/A') + "\n";
+                txt += "📍 *Endereço:* " + (item.endereco || '-') + "\n";
+                txt += "🌐 *GPS:* " + (item.latitude || '-') + ", " + (item.longitude || '-') + "\n";
+                txt += "------------------------------\n";
+            });
+
+            navigator.clipboard.writeText(txt);
+            alert("Texto copiado para a área de transferência! Cole no WhatsApp.");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        resetarData();
+        validarAcaoSolicitada();
+    });
+</script>
+
+</body>
+</html>
